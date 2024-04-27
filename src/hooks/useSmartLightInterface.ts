@@ -7,6 +7,7 @@ export interface SmartLight {
   setChase: () => void;
   runGcode: () => void;
   runCommand: (command: string) => void;
+  isLoading?: boolean;
 }
 
 // source: http://stackoverflow.com/a/11058858
@@ -21,6 +22,7 @@ function str2ab(str: string) {
 
 export const useSmartLightInterface = (): SmartLight => {
   const [isConnected, setIsConnected] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [themeCharacteristic, setThemeCharacteristic] =
     React.useState<BluetoothRemoteGATTCharacteristic | null>(null);
 
@@ -30,11 +32,13 @@ export const useSmartLightInterface = (): SmartLight => {
   };
 
   const connect = async () => {
+    setIsLoading(true);
     const device = await navigator.bluetooth.requestDevice(bluetoothOptions);
     if (!device) {
       console.error("Failed to connect to device.");
       return;
     }
+
     const server = await device.gatt?.connect();
 
     if (!server) {
@@ -84,6 +88,12 @@ export const useSmartLightInterface = (): SmartLight => {
     themeCharacteristic?.writeValue(str2ab(command));
   };
 
+  React.useEffect(() => {
+    if (isConnected) {
+      setIsLoading(false);
+    }
+  }, [isConnected]);
+
   return {
     connect,
     isConnected,
@@ -91,6 +101,7 @@ export const useSmartLightInterface = (): SmartLight => {
     setFill,
     setChase,
     runGcode,
-    runCommand
+    runCommand,
+    isLoading
   };
 };
